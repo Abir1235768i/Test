@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Birthday Greeting Page</title>
+  <style>
+    /* Existing styles remain unchanged */
+
+    /* New styles for cake reveal */
+    .cake-reveal-btn {
+      background: linear-gradient(45deg, #ff1493, #ff69b4);
+      padding: 1rem 2rem;
+      border-radius: 50px;
+      border: none;
+      color: white;
+      font-size: 1.2em;
+      cursor: pointer;
+      margin: 1rem 0;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 15px rgba(255, 20, 147, 0.3);
+      animation: pulse 2s infinite;
+    }
+
+    .cake-reveal-btn:hover {
+      transform: scale(1.05);
+      box-shadow: 0 6px 20px rgba(255, 20, 147, 0.5);
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+      100% { transform: scale(1); }
+    }
+
+    .cake-wrapper {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) scale(0);
+      z-index: 100;
+      background: rgba(255, 255, 255, 0.95);
+      padding: 2rem;
+      border-radius: 20px;
+      box-shadow: 0 0 50px rgba(255, 20, 147, 0.3);
+      transition: all 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    }
+
+    .cake-wrapper.active {
+      transform: translate(-50%, -50%) scale(1);
+    }
+
+    .cake-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.8);
+      z-index: 99;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.3s ease;
+    }
+
+    .cake-overlay.active {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .close-cake {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: none;
+      border: none;
+      color: #ff1493;
+      font-size: 1.5em;
+      cursor: pointer;
+      transition: transform 0.3s ease;
+    }
+
+    .close-cake:hover {
+      transform: rotate(90deg);
+    }
+
+    .cake-scene {
+      width: 300px;
+      height: 300px;
+      perspective: 1000px;
+    }
+
+    .sparkles {
+      position: absolute;
+      pointer-events: none;
+      width: 10px;
+      height: 10px;
+      background: white;
+      border-radius: 50%;
+      animation: sparkle 1s linear infinite;
+    }
+
+    @keyframes sparkle {
+      0% { transform: scale(0) rotate(0deg); opacity: 0; }
+      50% { transform: scale(1) rotate(180deg); opacity: 1; }
+      100% { transform: scale(0) rotate(360deg); opacity: 0; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🎉 ওহে জন্মদিনে মন খারাপ! 🎉</h1>
+    <div class="wishes-container" id="wishes"></div>
+    <button class="cake-reveal-btn" onclick="revealCake()">🔥?তোমার জন্য উপহার! 𓪡</button>
+  </div>
+
+  <div class="cake-overlay" id="cakeOverlay"></div>
+  <div class="cake-wrapper" id="cakeWrapper">
+    <button class="close-cake" onclick="hideCake()">×</button>
+    <div class="cake-scene" id="cakeScene">গরিবস বলে বাস্তবে কেক দিতে পারিনি তাই কি খাবে নাহ!! খাও!! </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.4.0/dist/confetti.browser.min.js"></script>
+  <script>
+    // Existing JavaScript remains unchanged
+
+    // Cake reveal function
+    function revealCake() {
+      const overlay = document.getElementById('cakeOverlay');
+      const wrapper = document.getElementById('cakeWrapper');
+      
+      overlay.classList.add('active');
+      wrapper.classList.add('active');
+
+      // Create sparkles
+      for (let i = 0; i < 20; i++) {
+        createSparkle();
+      }
+
+      // Enhanced 3D cake with candles and decoration
+      const scene = new THREE.Scene();
+      const camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
+      const renderer = new THREE.WebGLRenderer({
+        antialias: true,
+        alpha: true
+      });
+      
+      renderer.setSize(300, 300);
+      document.getElementById('cakeScene').appendChild(renderer.domElement);
+
+      // Create cake layers
+      const createCakeLayer = (y, scale, color) => {
+        const geometry = new THREE.CylinderGeometry(scale, scale, 0.5, 32);
+        const material = new THREE.MeshPhongMaterial({
+          color: color,
+          shininess: 100,
+          specular: 0xffffff
+        });
+        const layer = new THREE.Mesh(geometry, material);
+        layer.position.y = y;
+        return layer;
+      };
+
+      const cakeGroup = new THREE.Group();
+      
+      // Add cake layers
+      cakeGroup.add(createCakeLayer(0, 1.2, 0xff69b4));    // Bottom layer
+      cakeGroup.add(createCakeLayer(0.5, 1, 0xff1493));     // Middle layer
+      cakeGroup.add(createCakeLayer(1, 0.8, 0xff69b4));     // Top layer
+
+      // Add candles
+      const candleGeometry = new THREE.CylinderGeometry(0.05, 0.05, 0.5, 16);
+      const candleMaterial = new THREE.MeshPhongMaterial({ color: 0xffffff });
+      
+      for (let i = 0; i < 8; i++) {
+        const candle = new THREE.Mesh(candleGeometry, candleMaterial);
+        const angle = (i / 8) * Math.PI * 2;
+        candle.position.x = Math.cos(angle) * 0.5;
+        candle.position.z = Math.sin(angle) * 0.5;
+        candle.position.y = 1.5;
+        cakeGroup.add(candle);
+
+        // Add flame
+        const flameGeometry = new THREE.SphereGeometry(0.08, 16, 16);
+        const flameMaterial = new THREE.MeshPhongMaterial({
+          color: 0xffff00,
+          emissive: 0xff4500
+        });
+        const flame = new THREE.Mesh(flameGeometry, flameMaterial);
+        flame.position.y = 0.3;
+        candle.add(flame);
+      }
+
+      scene.add(cakeGroup);
+
+      // Lighting
+      const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+      scene.add(ambientLight);
+
+      const pointLight = new THREE.PointLight(0xffffff, 1);
+      pointLight.position.set(5, 5, 5);
+      scene.add(pointLight);
+
+      camera.position.z = 5;
+      camera.position.y = 1;
+
+      function animate() {
+        requestAnimationFrame(animate);
+        cakeGroup.rotation.y += 0.01;
+        renderer.render(scene, camera);
+      }
+
+      animate();
+
+      // Additional confetti burst
+      confetti({
+        particleCount: 500,
+        spread: 180,
+        origin: { y: 0.6 }
+      });
+    }
+
+    function createSparkle() {
+      const sparkle = document.createElement('div');
+      sparkle.className = 'sparkles';
+      sparkle.style.left = Math.random() * 100 + '%';
+      sparkle.style.top = Math.random() * 100 + '%';
+      document.getElementById('cakeWrapper').appendChild(sparkle);
+
+      setTimeout(() => sparkle.remove(), 1000);
+    }
+
+    function hideCake() {
+      const overlay = document.getElementById('cakeOverlay');
+      const wrapper = document.getElementById('cakeWrapper');
+      
+      overlay.classList.remove('active');
+      wrapper.classList.remove('active');
+    }
+  </script>
+</body>
+</html>
